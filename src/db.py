@@ -30,12 +30,18 @@ def get_connection():
 
 def run_schema(conn) -> None:
     """Create tables from schema.sql."""
-    with open(os.path.join(os.path.dirname(__file__), "schema.sql")) as f:
+    schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
+    with open(schema_path) as f:
         schema_sql = f.read()
     cursor = conn.cursor()
-    for stmt in schema_sql.split(";"):
-        stmt = stmt.strip()
-        if stmt and not stmt.startswith("--"):
+    # Split by semicolon, strip comments from each block, execute non-empty DDL
+    for block in schema_sql.split(";"):
+        lines = [
+            line for line in block.split("\n")
+            if line.strip() and not line.strip().startswith("--")
+        ]
+        stmt = "\n".join(lines).strip()
+        if stmt:
             cursor.execute(stmt)
     conn.commit()
 
